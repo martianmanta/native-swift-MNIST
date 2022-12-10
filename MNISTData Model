@@ -1,0 +1,72 @@
+
+import Foundation
+import SwiftUI
+
+struct MNISTData: Identifiable, Equatable {
+
+    
+    static func == (lhs: MNISTData, rhs: MNISTData) -> Bool {
+        // Compare the labels
+        if lhs.label != rhs.label {
+            return false
+        }
+        
+        // Compare the image matrices
+        if lhs.image == rhs.image {
+            return true
+        } else {
+            return false
+        }
+    }
+
+    
+    let id = UUID()
+    let label: Int
+    let image: Matrix
+}
+
+
+
+func parseMNISTData(imagesFile: String, labelsFile: String) -> [MNISTData] {
+    // Read the images file and labels file into arrays of bytes
+    let imagesData = try! Data(contentsOf: URL(fileURLWithPath: imagesFile))
+    let labelsData = try! Data(contentsOf: URL(fileURLWithPath: labelsFile))
+    
+    // Parse the number of images and rows/columns from the images file
+    var magicNumber = [UInt8](repeating: 0, count: 4)
+    imagesData.copyBytes(to: &magicNumber, count: 4)
+    let numImages = Int(magicNumber[3]) | Int(magicNumber[2]) << 8 | Int(magicNumber[1]) << 16 | Int(magicNumber[0]) << 24
+    imagesData.copyBytes(to: &magicNumber, count: 4)
+    let numRows = Int(magicNumber[3]) | Int(magicNumber[2]) << 8 | Int(magicNumber[1]) << 16 | Int(magicNumber[0]) << 24
+    imagesData.copyBytes(to: &magicNumber, count: 4)
+    let numColumns = Int(magicNumber[3]) | Int(magicNumber[2]) << 8 | Int(magicNumber[1]) << 16 | Int(magicNumber[0]) << 24
+    
+    // Parse the labels from the labels file
+    var labelMagicNumber = [UInt8](repeating: 0, count: 4)
+    labelsData.copyBytes(to: &labelMagicNumber, count: 4)
+    let numLabels = Int(labelMagicNumber[3]) | Int(labelMagicNumber[2]) << 8 | Int(labelMagicNumber[1]) << 16 | Int(labelMagicNumber[0]) << 24
+    
+    // Make sure the number of images and labels match
+    guard numImages == numLabels else {
+        print("Number of images and labels do not match")
+        return []
+    }
+    
+    // Parse the images and labels into an array of MNISTData objects
+    var result = [MNISTData]()
+    for i in 0..<numImages {
+        // Parse the image data
+        var imageData = [UInt8](repeating: 0, count: numRows * numColumns)
+        imagesData.copyBytes(to: &imageData, from: (i * numRows * numColumns)..<(i * numRows * numColumns) + (numRows * numColumns))
+        let image = Matrix(rows: numRows, columns: numColumns, data: imageData.map { Double($0) / 255.0 })
+        
+        // Parse the label data
+        var labelData = [UInt8](repeating: 0, count: 1)
+        labelsData.copyBytes(to: &labelData, from: (i * 1)..<(i * 1) + 1)
+        let label = Int(labelData[0])
+        
+        // Add the image and label to the result array
+        result.append(MNISTData(label: label, image: image))
+    }
+    return result
+}
