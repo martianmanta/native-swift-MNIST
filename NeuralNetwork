@@ -1,0 +1,57 @@
+import Foundation
+import Accelerate
+import Metal
+import MetalPerformanceShaders
+
+struct NeuralNetwork {
+    var inputLayer: Matrix
+    var hiddenLayer: Matrix
+    var outputLayer: Matrix
+    var weightsIH: Matrix
+    var weightsHO: Matrix
+    var learningRate: Double
+    
+    // Initialize neural network with random weights
+    init(inputNodes: Int, hiddenNodes: Int, outputNodes: Int, learningRate: Double = 0.1) {
+        self.inputLayer = Matrix(rows: inputNodes, columns: 1)
+        self.hiddenLayer = Matrix(rows: hiddenNodes, columns: 1)
+        self.outputLayer = Matrix(rows: outputNodes, columns: 1)
+        self.weightsIH = Matrix.random(rows: hiddenNodes, columns: inputNodes)
+        self.weightsHO = Matrix.random(rows: outputNodes, columns: hiddenNodes)
+        self.learningRate = learningRate
+    }
+    
+    // Feed forward
+    func feedForward(inputs: Matrix) -> NeuralNetwork {
+        var network = self
+        
+        // Assign inputs to input layer
+        network.inputLayer = inputs
+        
+        // Calculate hidden layer values
+        network.hiddenLayer = weightsIH.dot(inputs).map { max(0, $0) } // ReLU activation function
+        
+        // Calculate output layer values
+        network.outputLayer = weightsHO.dot(hiddenLayer).map { max(0, $0) } // ReLU activation function
+        
+        return network
+    }
+    
+    // Backpropagate errors
+    func backPropagate(targets: Matrix) -> NeuralNetwork {
+        var network = self
+        
+        // Calculate output layer error
+        let outputErrors = targets - network.outputLayer
+        
+        // Calculate hidden layer error
+        let hiddenErrors = weightsHO.transpose.dot(outputErrors)
+        
+        // Update weights
+        network.weightsHO = hiddenLayer.dot(outputErrors.transpose).map { $0 * learningRate }
+        network.weightsIH = inputLayer.dot(hiddenErrors.transpose).map { $0 * learningRate }
+        
+        return network
+    }
+}
+
