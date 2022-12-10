@@ -1,0 +1,133 @@
+import Foundation
+import Metal
+import Accelerate
+
+
+struct Matrix {
+    let rows: Int
+    let columns: Int
+    var data: [Double]
+    
+    init(rows: Int, columns: Int, data: [Double] = []) {
+        self.rows = rows
+        self.columns = columns
+        
+        if data.count != rows * columns {
+            self.data = [Double](repeating: 0.0, count: rows * columns)
+        } else {
+            self.data = data
+        }
+    }
+    
+    // Get element at row i and column j
+    subscript(i: Int, j: Int) -> Double {
+        get {
+            return data[i * columns + j]
+        }
+        set {
+            data[i * columns + j] = newValue
+        }
+    }
+    
+    // Apply a function element-wise to the matrix
+    func map(_ f: (Double) -> Double) -> Matrix {
+        var result = Matrix(rows: rows, columns: columns)
+        for i in 0..<rows {
+            for j in 0..<columns {
+                result[i, j] = f(self[i, j])
+            }
+        }
+        return result
+    }
+    
+    // Dot product of two matrices
+    func dot(_ b: Matrix) -> Matrix {
+        let columns = b.rows
+        var result = Matrix(rows: rows, columns: columns)
+        for i in 0..<rows {
+            for j in 0..<columns {
+                var sum = 0.0
+                for k in 0..<self.columns {
+                    sum += self[i, k] * b[k, j]
+                }
+                result[i, j] = sum
+            }
+        }
+        return result
+    }
+    
+    // Transpose of a matrix
+    var transpose: Matrix {
+        var result = Matrix(rows: columns, columns: rows)
+        for i in 0..<rows {
+            for j in 0..<columns {
+                result[j, i] = self[i, j]
+            }
+        }
+        return result
+    }
+    
+    // Generate a random matrix with elements in the range [min, max]
+    static func random(rows: Int, columns: Int, min: Double = 0.0, max: Double = 1.0) -> Matrix {
+        var data = [Double](repeating: 0.0, count: rows * columns)
+        for i in 0..<data.count {
+            data[i] = Double.random(in: min...max)
+        }
+        return Matrix(rows: rows, columns: columns, data: data)
+    }
+    
+    // Add two matrices element-wise
+    static func +(a: Matrix, b: Matrix) -> Matrix {
+        var result = Matrix(rows: a.rows, columns: a.columns)
+        for i in 0..<a.rows {
+            for j in 0..<a.columns {
+                result[i, j] = a[i, j] + b[i, j]
+            }
+        }
+        return result
+    }
+    
+    // Subtract two matrices element-wise
+    static func -(a: Matrix, b: Matrix) -> Matrix {
+        var result = Matrix(rows: a.rows, columns: a.columns)
+        for i in 0..<a.rows {
+            for j in 0..<a.columns {
+                result[i, j] = a[i, j] - b[i, j]
+            }
+        }
+        return result
+    }
+    
+    // Check if two matrices are equal
+    static func ==(a: Matrix, b: Matrix) -> Bool {
+        if a.rows != b.rows || a.columns != b.columns {
+            return false
+        }
+        
+        for i in 0..<a.rows {
+            for j in 0..<a.columns {
+                if a[i, j] != b[i, j] {
+                    return false
+                }
+            }
+        }
+        
+        return true
+    }
+    
+    // Multiply a matrix by a scalar value
+        static func *(a: Matrix, b: Double) -> Matrix {
+            return a.map { $0 * b }
+        }
+    
+    // Add a scalar value to a matrix
+    static func +=(a: inout Matrix, b: Double) {
+        for i in 0..<a.rows {
+            for j in 0..<a.columns {
+                a[i, j] += b
+            }
+        }
+    }
+
+    
+}
