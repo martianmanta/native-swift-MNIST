@@ -1,0 +1,59 @@
+import SwiftUI
+
+struct ImagesView: View {
+    
+    @State var labelPath = ""
+    @State var imagesPath = ""
+    @State var load: Bool = false
+    @State var images = [MNISTData]()
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Button("Choose Images") {
+                    // Show the file picker
+                    let panel = NSOpenPanel()
+                    panel.allowedFileTypes = ["idx3-ubyte"]
+                    panel.begin { result in
+                        if result == .OK, let url = panel.url {
+                            // Get the path of the selected CSV file
+                            self.imagesPath = url.path
+                        }
+                    }
+                }
+                Text(imagesPath)
+                Button("Choose Labels file") {
+                    // Show the file picker
+                    let panel = NSOpenPanel()
+                    panel.allowedFileTypes = ["idx1-ubyte"]
+                    panel.begin { result in
+                        if result == .OK, let url = panel.url {
+                            // Get the path of the selected CSV file
+                            self.labelPath = url.path
+                        }
+                    }
+                }
+                Text(labelPath)
+            }
+            Button {
+                self.load = true
+                let imageLoader = parseMNISTData(imagesFile: imagesPath, labelsFile: labelPath)
+                images = imageLoader
+                if images.count > 0 {
+                    print(images[0])
+                }
+                
+            } label: {
+                Text("Load, loaded: \(images.count)")
+            }
+            if load {
+                LazyVStack {
+                    ForEach(images) { image in
+                        SampleMNISTView(data: image)
+                    }
+                }
+            }
+            
+        }
+    }
+}
